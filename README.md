@@ -6,9 +6,10 @@ Browser-based vowel synthesis:
 - selectable IPA vowel overlays
 
 Inspired by:
-https://www.speech.kth.se/wavesurfer/formant/
-https://editor.p5js.org/golan/sketches/El9vQ13I1
+- Beskow (2000): https://opensource.apple.com/source/tcl/tcl-95/tcl_ext/snack/snack/demos/tcl/formant.tcl.auto.html
+- https://editor.p5js.org/golan/sketches/El9vQ13I1
 
-Web Audio framework: https://tonejs.github.io/
-Graphical framework: https://p5js.org/
+Built using:
+- Web Audio framework: https://tonejs.github.io/
+- Graphical framework: https://p5js.org/
 
