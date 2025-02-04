@@ -4,7 +4,7 @@
 // Michael Proctor
 // mike.i.proctor@gmail.com
 // Created: 2022-08-27
-// Updated: 2025-01-26
+// Updated: 2025-02-04
 //
 // Inspired by:
 // https://www.speech.kth.se/wavesurfer/formant/
@@ -17,47 +17,59 @@
 // ----------------------------
 // Formant frequency references:
 // ----------------------------
+// Bulgarian: Sabev et al. (2023, 2024)
 // Cardinal: Bladon & Fant (1978)
+// Drehu: Torres et al. (2024)
 // Dutch: Pols et al. (1973); Van Nierop et al. (1973)
 // English Australian: Cox (2006)
 // English RP: Deterding (1997)
 // English USA: Hillenbrand et al. (1995)
-// Japanese: Yazawa & Kondo (2019)
+// Japanese: Kasuya et al. (1968)
+// Kamu: Harvey et al. (2024)
+// Larrakia: Harvey et al. (2024)
 // Russian: Fant (1971)
+// Warlpiri: Tabain et al. (2020)
 //
 
 // --------------------
 // vowel space geometry
 // --------------------
 const frontx1 = 50;
-const frontx2 = 225;
-const backx = 500;
-const totx = backx - frontx1;
-const difx = frontx2 - frontx1;
-const topy = 50;
-const boty = 500;
-const toty = boty - topy;
+const frontx2 = 250;
+const backx1  = 550;
+const backx2  = 470;
+const totx    = backx1 - frontx1;
+const difx1   = frontx2 - frontx1;
+const difx2   = backx1 - backx2;
+const topy    = 50;
+const boty    = 500;
+const toty    = boty - topy;
+
+let   calSpc  = true;          // display limits (Hz) of acoustic plane
 
 // ------------------------------
 // acoustic limits of vowel space
 // ------------------------------
-const  F1minM =  210;
-const  F1maxM =  830;
+const  F1minM =  200;
+const  F1maxM =  850;
 const  F1difM = F1maxM-F1minM;
-const  F1minF =  230;
-const  F1maxF = 1100;
+const  F1minF =  250;
+const  F1maxF = 1050;
 const  F1difF = F1maxF-F1minF;
 
+const  dfF1F2 =   30;
 const  F2minM =  500;
-const  F2mxMa = 1800;    // bottom left M vspace
+const  F2mn2M = F1maxM+dfF1F2;   // bottom rt M vspace
+const  F2mx2M = 1800;            // bottom lf M vspace
 const  F2maxM = 2600;
-const  F2df1M = F2maxM-F2minM;
-const  F2df2M = F2maxM-F2mxMa;
-const  F2minF =  600;
-const  F2mxFa = 2200;    // bottom left F vspace
+const  F2df1M = F2mn2M-F2minM;
+const  F2df2M = F2maxM-F2mx2M;
+const  F2minF =  550;
+const  F2mn2F = F1maxF+dfF1F2;   // bottom rt F vspace
+const  F2mx2F = 2200;            // bottom lf F vspace
 const  F2maxF = 3200;
-const  F2df1F = F2maxF-F2minF;
-const  F2df2F = F2maxF-F2mxFa;
+const  F2df1F = F2mn2F-F2minF;
+const  F2df2F = F2maxF-F2mx2F;
 
 const  F3minM = 2200;
 const  F3maxM = 3200;
@@ -97,7 +109,7 @@ const t4fmt = t3fmt+rhfmt;
 // ---------------
 // speaker control
 // ---------------
-const lblSpkx = backx + 25;
+const lblSpkx = backx1 + 40;
 const lblSpky = topy + 15;
 const selSpkx = lblSpkx;
 const selSpky = lblSpky + 12;
@@ -111,12 +123,18 @@ const lblSrcy = selSpky + 80;
 const selSrcx = lblSpkx;
 const selSrcy = lblSrcy + 12;
 const fontSrc = fontSpk;
+const lblF0x  = lblSpkx;
+const lblF0y  = lblSrcy + 30;
+const srcF0x  = lblF0x + 30;
+const srcF0y  = lblF0y + 12;
+const lb2F0x  = lblF0x + 100;
+const lb2F0y  = lblF0y;
 
 // -----------------
 // reference control
 // -----------------
 const lblRefx = lblSpkx;
-const lblRefy = selSrcy + 80;
+const lblRefy = selSrcy + 120;
 const selRefx = lblSpkx;
 const selRefy = lblRefy + 12;
 const fontRef = fontSpk;
@@ -124,34 +142,40 @@ const fontRef = fontSpk;
 // ---------------
 // display params
 // ---------------
-const bgndCol = 250;
+const bgndCol = "#fdfdfd";
 const fgndCol = "#E0F2F7";
 const olinCol = "#88ccff";
 const vrefCol = "#0088bb";
 const vow2Col = "#0880a0";
 const vselCol = "#001155";
 const vse2Col = "#11ddee";
-const lineWt = 1;
-const cursSz = 22;
+const lineWt  = 1;
+const cursSz  = 22;
 const cursSym = "+";
 const cursCol = 10;
-const cursWt = 0;
-const fontSz = 16;
-const fontWt = 0;
+const cursWt  = 0;
+const fontSz  = 16;
+const fontWt  = 0;
 const fontCol = 16;
-const olaySz = 19;
-const olayWt = 0;
-const vselWt = 0;
-const vselSz = 19;
+const olaySz  = 19;
+const olayWt  = 0;
+const vselWt  = 0;
+const vselSz  = 19;
+const vcalSz  = 10;
+const vcalWt  = 0;
+const vcalCol = "#aaaaaa";
 
 // -----------------------
 // voice source parameters
 // -----------------------
-const F0_M = 115;      // mean male F0 (Hillenbrand 1995: 130Hz)
-const F0_F = 220;      // mean female F0 (Hillenbrand 1995)
-let F0_Hz  = F0_M;     // source frequency
-let F0_Ha  = 0.80;     // vibrato source harmonicity
-let F0_MI  = 0.08;     // vibrato source modulation index
+const F0_M   = 110;      // mean male F0 (Hillenbrand 1995: 130Hz)
+const F0_F   = 220;      // mean female F0 (Hillenbrand 1995)
+const F0_min =  50;      // minimum F0
+const F0_max = 400;      // minimum F0
+const F0_stp =  10;      // F0 selector increment
+let   F0_Hz  = F0_M;     // source frequency
+let   F0_Ha  = 0.80;     // vibrato source harmonicity
+let   F0_MI  = 0.08;     // vibrato source modulation index
 
 // ----------------------------------------
 // initial acoustic parameters (Male schwa)
@@ -165,6 +189,8 @@ let F1max = F1maxM;
 let F2_Hz = 1500;
 let F2_QF = 15;
 let F2min = F2minM;
+let F2mn2 = F2mn2M;
+let F2mx2 = F2mx2M;
 let F2max = F2maxM;
 
 let F3_Hz = 2500;
@@ -172,6 +198,11 @@ let F3_QF = 25;
 
 let F4_Hz = 3500;
 let F4_QF = 35;
+
+let dF32m = 1000;        // F3-F2 (Hz), male
+let dF32f = 1100;        // F3-F2 (Hz), female
+let dF43m = 1200;        // F4-F3 (Hz), male
+let dF43f = 1300;        // F4-F3 (Hz), female
 
 var vrefs = [];
 
@@ -279,7 +310,8 @@ function setup() {
   selSpk.position(selSpkx, selSpky);
   selSpk.option("male");
   selSpk.option("female");
-  selSpk.changed(changeSpk);
+  selSpk.changed(refreshSpk);
+  //selSpk.changed(refreshOverlay);
 
   // glottal source selector
   selSrc = createSelect();
@@ -287,19 +319,37 @@ function setup() {
   selSrc.option("voiced");
   selSrc.option("whisper");
   selSrc.option("vibrato");
-  selSrc.changed(changeSrc);
-
+  selSrc.changed(configureSrc);
+  
+  // glottal source frequency control
+  srcL1 = createElement('p','F0:');
+  srcL1.position(lblF0x, lblF0y);
+  srcF0 = createInput(F0_Hz.toString(), 'number');
+  srcF0.position(srcF0x, srcF0y);
+  srcF0.size(wInpB, hInpB);
+  srcF0.attribute('step', F0_stp);
+  srcF0.attribute('min',  F0_min);
+  srcF0.attribute('max',  F0_max);
+  srcL2 = createElement('p','Hz');
+  srcL2.position(lb2F0x, lb2F0y);
+  
   // reference vowel overlay selector
   selRef = createSelect();
   selRef.position(selRefx, selRefy);
   selRef.option("none");
+  selRef.option("Bulgarian");
   selRef.option("Cardinal");
+  selRef.option("Drehu");
   selRef.option("Dutch");
   selRef.option("English Aus");
   selRef.option("English RP");
   selRef.option("English USA");
   selRef.option("Japanese");
+  selRef.option("Kamu");
+  selRef.option("Larrakia");
   selRef.option("Russian");
+  selRef.option("Warlpiri");
+  selRef.changed(refreshSpk);
   selRef.changed(refreshOverlay);
 }
 
@@ -312,9 +362,10 @@ function draw() {
 
   // erase old cursor, check location
   background(bgndCol);
-  if (x < backx && y > topy && y < boty) {
-    frontquad = frontx1 + ((y-topy)/toty)*difx
-    if (x > frontquad) {
+  if (y > topy && y < boty) {
+    frntquad  = frontx1 + ((y-topy)/toty)*difx1;
+    backquad  = backx1  - ((y-topy)/toty)*difx2;
+    if (x > frntquad && x < backquad) {
       mouseOv = true;
     } else {
       mouseOv = false;
@@ -327,17 +378,31 @@ function draw() {
   textSize(fontSpk);
   strokeWeight(fontWt);
   fill(fontCol);
-  text("Speaker", lblSpkx, lblSpky);
-  text("Source", lblSrcx, lblSrcy);
+  text("Speaker",   lblSpkx, lblSpky);
+  text("Source",    lblSrcx, lblSrcy);
   text("Reference", lblRefx, lblRefy);
   textAlign(LEFT);
 
   // draw vowel quadrilateral
-  //noFill();
   fill(fgndCol);
   stroke(olinCol);
   strokeWeight(lineWt);
-  quad(frontx1, topy, frontx2, boty, backx, boty, backx, topy);
+  quad(frontx1, topy, frontx2, boty, backx2, boty, backx1, topy);
+
+  // calibrate vowel quadrilateral
+  if (calSpc) {
+    textSize(vcalSz);
+    strokeWeight(vcalWt);
+    fill(vcalCol);
+    text( str(F1min),  frontx1,    topy-5  );
+    text( str(F2max),  frontx1-25, topy+13 );
+    text( str(F1max),  frontx2,    boty+13 );
+    text( str(F2mx2),  frontx2-34, boty-4  );
+    text( str(F1max),  backx2-16,  boty+13 );
+    text( str(F2mn2),  backx2+7,   boty-4  );
+    text( str(F1min),  backx1-16,  topy-5  );
+    text( str(F2min),  backx1+5,   topy+13 );
+  }
 
   // refresh reference vowel display
   refreshOverlay();
@@ -359,8 +424,27 @@ function draw() {
       d = dist(x,y, vrefs[ix].vx,vrefs[ix].vy);
       if (d < radSel) {
         vrefs[ix].highlight();
+        F1_Hz = vrefs[ix].F1;
+        F2_Hz = vrefs[ix].F2;
         F3_Hz = vrefs[ix].F3;
+        if (F3_Hz === undefined) {
+          if (F2_Hz > 1500) {
+            // back vowel F3 estimate (Nearey 1989)
+            F3_Hz = 0.522*F1_Hz + 1.197*F2_Hz + 57;
+          } else {
+            // front vowel F3 estimate (Nearey 1989)
+            F3_Hz = 0.787*F1_Hz - 0.365*F2_Hz + 2341;
+          }
+          console.log("F3 = " + str(F3_Hz) + "Hz");          
+        }
         F4_Hz = vrefs[ix].F4;
+        if (F4_Hz === undefined) {
+          if (selSpk.value() == "male") {
+            F4_Hz = F3_Hz + dF43m;          
+          } else {
+            F4_Hz = F3_Hz + dF43f;          
+          }
+        }
         fmtF1.value(str(round(F1_Hz)));
         fmtF2.value(str(round(F2_Hz)));
         fmtF3.value(str(round(F3_Hz)));
@@ -375,7 +459,7 @@ function draw() {
   // report formant frequencies at cursor position
   if (mouseOv) {
     F1_Hz = map(y, topy, boty, F1min, F1max);
-    F2_Hz = map(x, frontx1, backx, F2max, F2min);
+    F2_Hz = map(x, frontx1, backx1, F2max, F2min);
     textSize(fontSz);
     strokeWeight(fontWt);
     fill(fontCol);
@@ -389,7 +473,8 @@ function draw() {
 //=====================
 function mousePressed() {
   if (mouseOv) {
-    changeSrc();
+    configureSrc();
+    F0_Hz = str(round(srcF0.value()));
     fmtF1.value(str(round(F1_Hz)));
     fmtF2.value(str(round(F2_Hz)));
     F3_Hz = str(round(fmtF3.value()));
@@ -411,25 +496,29 @@ function mouseReleased() {
 }
 
 //==================
-function changeSpk() {
+function refreshSpk() {
   if (selSpk.value() == "male") {
     F0_Hz = F0_M;
     F1min = F1minM;
     F1max = F1maxM;
     F2min = F2minM;
+    F2mn2 = F2mn2M;
+    F2mx2 = F2mx2M;
     F2max = F2maxM;
   } else if (selSpk.value() == "female") {
     F0_Hz = F0_F;
     F1min = F1minF;
     F1max = F1maxF;
     F2min = F2minF;
+    F2mn2 = F2mn2F;
+    F2mx2 = F2mx2F;
     F2max = F2maxF;
   }
-  refreshOverlay();
+  srcF0.value(str(F0_Hz));
 }
 
 //==================
-function changeSrc() {
+function configureSrc() {
   if (selSrc.value() == "voiced") {
     vowel.harmonicity.value = 1;
     vowel.modulationIndex.value = 0;
@@ -449,8 +538,8 @@ function changeSrc() {
 //=====================
 function refreshOverlay() {
 
-  const dF1m =  25;
-  const dF2m = 100;
+  const dF1m = 25;
+  const dF2m = 90;
   const dF1f = 1.3*dF1m;
   const dF2f = 1.3*dF2m;
   
@@ -461,121 +550,158 @@ function refreshOverlay() {
       vrefs.push(new Vowel("i", F1minM+dF1m,       F2maxM-dF2m,            3070, 3590));
       vrefs.push(new Vowel("e", F1minM+1/3*F1difM, F2maxM-1/3*F2df2M-dF2m, 2720, 3790));
       vrefs.push(new Vowel("ɛ", F1minM+2/3*F1difM, F2maxM-2/3*F2df2M-dF2m, 2580, 3940));
-      vrefs.push(new Vowel("a", F1maxM-dF1m,       F2mxMa-dF2m,            2460, 3710));
-      vrefs.push(new Vowel("ɑ", F1maxM-dF1m,       F2minM+dF2m,            2770, 3650));
-      vrefs.push(new Vowel("ɔ", F1minM+2/3*F1difM, F2minM+dF2m,            2640, 3310));
-      vrefs.push(new Vowel("o", F1minM+1/3*F1difM, F2minM+dF2m,            2670, 3240));
+      vrefs.push(new Vowel("a", F1maxM-dF1m,       F2mx2M-dF2m,            2460, 3710));
+      vrefs.push(new Vowel("ɑ", F1maxM-dF1m,       F2mn2M+0.8*dF2m,        2770, 3650));
+      vrefs.push(new Vowel("ɔ", F1minM+2/3*F1difM, F2minM+2/3*F2df1M+dF2m, 2640, 3310));
+      vrefs.push(new Vowel("o", F1minM+1/3*F1difM, F2minM+1/3*F2df1M+dF2m, 2670, 3240));
       vrefs.push(new Vowel("u", F1minM+dF1m,       F2minM+dF2m,            2550, 3280));
     } else {
       vrefs = [];
-      vrefs.push(new Vowel("i", F1minF+dF1f,       F2maxF-dF2f,            3070, 3590));
-      vrefs.push(new Vowel("e", F1minF+1/3*F1difF, F2maxF-1/3*F2df2F-dF2f, 2720, 3790));
-      vrefs.push(new Vowel("ɛ", F1minF+2/3*F1difF, F2maxF-2/3*F2df2F-dF2f, 2580, 3940));
-      vrefs.push(new Vowel("a", F1maxF-dF1f,       F2mxFa-dF2f,            2460, 3710));
-      vrefs.push(new Vowel("ɑ", F1maxF-dF1f,       F2minF+dF2f,            2770, 3650));
-      vrefs.push(new Vowel("ɔ", F1minF+2/3*F1difF, F2minF+dF2f,            2640, 3310));
-      vrefs.push(new Vowel("o", F1minF+1/3*F1difF, F2minF+dF2f,            2670, 3240));
-      vrefs.push(new Vowel("u", F1minF+dF1f,       F2minF+dF2f,            2550, 3280));
+      vrefs.push(new Vowel("i", F1minF+dF1f,       F2maxF-dF2f,            3170, 3690));
+      vrefs.push(new Vowel("e", F1minF+1/3*F1difF, F2maxF-1/3*F2df2F-dF2f, 2820, 3890));
+      vrefs.push(new Vowel("ɛ", F1minF+2/3*F1difF, F2maxF-2/3*F2df2F-dF2f, 2680, 4040));
+      vrefs.push(new Vowel("a", F1maxF-dF1f,       F2mx2F-dF2f,            2560, 3810));
+      vrefs.push(new Vowel("ɑ", F1maxF-dF1f,       F2mn2F,                 2870, 3750));
+      vrefs.push(new Vowel("ɔ", F1minF+2/3*F1difF, F2minF+2/3*F2df1M+dF2f, 2740, 3410));
+      vrefs.push(new Vowel("o", F1minF+1/3*F1difF, F2minF+1/3*F2df1M+dF2f, 2770, 3340));
+      vrefs.push(new Vowel("u", F1minF+dF1f,       F2minF+dF2f,            2650, 3380));
+    }
+  
+  } else if (selRef.value() == "Bulgarian") {
+    if (selSpk.value() == "male") {
+      // Sabev et al. (2023 Table 2; 2024 Table X)
+      vrefs = [];
+      vrefs.push(new Vowel("i",  319, 1848       ));
+      vrefs.push(new Vowel("ɛ",  468, 1707       ));
+      vrefs.push(new Vowel("a",  627, 1282       ));
+      vrefs.push(new Vowel("ɔ",  494,  923       ));
+      vrefs.push(new Vowel("u",  349,  999, 2354 ));
+      vrefs.push(new Vowel("ɤ",  423, 1188, 2247 ));
+    } else {
+      vrefs = [];
+      vrefs.push(new Vowel("i",  393, 2295       ));
+      vrefs.push(new Vowel("ɛ",  573, 2121       ));
+      vrefs.push(new Vowel("a",  847, 1593       ));
+      vrefs.push(new Vowel("ɔ",  587, 1041       ));
+      vrefs.push(new Vowel("u",  399, 1017, 2354 ));
+      vrefs.push(new Vowel("ɤ",  486, 1361, 2247 ));
+    }
+    
+  } else if (selRef.value() == "Drehu") {
+    if (selSpk.value() == "male") {
+      // Torres et al. (2024)
+      vrefs = [];
+      vrefs.push(new Vowel("i",  347, 2235, 2965 ));
+      vrefs.push(new Vowel("e",  440, 2027, 2765 ));
+      vrefs.push(new Vowel("ɛ",  549, 1925, 2828 ));
+      vrefs.push(new Vowel("a",  668, 1386, 2517 ));
+      vrefs.push(new Vowel("o",  464,  980, 2781 ));
+      vrefs.push(new Vowel("u",  395, 1007, 2799 ));
+      vrefs.push(new Vowel("ə",  490, 1315, 2785 ));
+    } else {
+      vrefs = [];
+      vrefs.push(new Vowel("i",  343, 2519, 3267 ));
+      vrefs.push(new Vowel("e",  439, 2381, 3105 ));
+      vrefs.push(new Vowel("ɛ",  578, 2131, 3133 ));
+      vrefs.push(new Vowel("a",  695, 1500, 2726 ));
+      vrefs.push(new Vowel("o",  431, 1020, 2824 ));
+      vrefs.push(new Vowel("u",  389,  966, 2795 ));
+      vrefs.push(new Vowel("ə",  460, 1367, 2877 ));
     }
     
   } else if (selRef.value() == "Dutch") {
     if (selSpk.value() == "male") {
       // Pols et al. (1973)
-      // no F4 data: Bladon & Fant (1978) / Hillenbrand (1995) values used
       vrefs = [];
-      vrefs.push(new Vowel("i",  294, 2208, 2766, 3590));
-      vrefs.push(new Vowel("y",  305, 1730, 2208, 3257));
-      vrefs.push(new Vowel("ɪ",  388, 2003, 2571, 3521));
-      vrefs.push(new Vowel("e",  407, 2017, 2553, 3503));
-      vrefs.push(new Vowel("ø",  443, 1497, 2260, 3200));
-      vrefs.push(new Vowel("ɛ",  583, 1725, 2471, 3840));
-      vrefs.push(new Vowel("œ",  438, 1498, 2354, 3286));
-      vrefs.push(new Vowel("a",  795, 1301, 2565, 3624));
-      vrefs.push(new Vowel("ɑ",  679, 1051, 2619, 3687));
-      vrefs.push(new Vowel("ɔ",  523,  866, 2692, 3586));
-      vrefs.push(new Vowel("o",  487,  911, 2481, 3384));
-      vrefs.push(new Vowel("u",  339,  810, 2323, 3357));
+      vrefs.push(new Vowel("i",  294, 2208, 2766 ));
+      vrefs.push(new Vowel("y",  305, 1730, 2208 ));
+      vrefs.push(new Vowel("ɪ",  388, 2003, 2571 ));
+      vrefs.push(new Vowel("e",  407, 2017, 2553 ));
+      vrefs.push(new Vowel("ø",  443, 1497, 2260 ));
+      vrefs.push(new Vowel("ɛ",  583, 1725, 2471 ));
+      vrefs.push(new Vowel("œ",  438, 1498, 2354 ));
+      vrefs.push(new Vowel("a",  795, 1301, 2565 ));
+      vrefs.push(new Vowel("ɑ",  679, 1051, 2619 ));
+      vrefs.push(new Vowel("ɔ",  523,  866, 2692 ));
+      vrefs.push(new Vowel("o",  487,  911, 2481 ));
+      vrefs.push(new Vowel("u",  339,  810, 2323 ));
     } else {
       // Van Nierop et al. (1973)
-      // no F4 data: Bladon & Fant (1978) / Hillenbrand (1995) values used
       vrefs = [];
-      vrefs.push(new Vowel("i",  276, 2510, 3046, 4100));
-      vrefs.push(new Vowel("y",  288, 1832, 2520, 3557));
-      vrefs.push(new Vowel("ɪ",  465, 2262, 2840, 3821));
-      vrefs.push(new Vowel("e",  471, 2352, 2895, 3803));
-      vrefs.push(new Vowel("ø",  476, 1690, 2512, 3500));
-      vrefs.push(new Vowel("ɛ",  669, 1905, 2788, 4140));
-      vrefs.push(new Vowel("œ",  490, 1688, 2568, 3586));
-      vrefs.push(new Vowel("a",  986, 1443, 2778, 3824));
-      vrefs.push(new Vowel("ɑ",  762, 1117, 2752, 3787));
-      vrefs.push(new Vowel("ɔ",  578,  933, 2852, 3786));
-      vrefs.push(new Vowel("o",  505,  961, 2608, 3584));
-      vrefs.push(new Vowel("u",  320,  842, 2746, 3757));
+      vrefs.push(new Vowel("i",  276, 2510, 3046 ));
+      vrefs.push(new Vowel("y",  288, 1832, 2520 ));
+      vrefs.push(new Vowel("ɪ",  465, 2262, 2840 ));
+      vrefs.push(new Vowel("e",  471, 2352, 2895 ));
+      vrefs.push(new Vowel("ø",  476, 1690, 2512 ));
+      vrefs.push(new Vowel("ɛ",  669, 1905, 2788 ));
+      vrefs.push(new Vowel("œ",  490, 1688, 2568 ));
+      vrefs.push(new Vowel("a",  986, 1443, 2778 ));
+      vrefs.push(new Vowel("ɑ",  762, 1117, 2752 ));
+      vrefs.push(new Vowel("ɔ",  578,  933, 2852 ));
+      vrefs.push(new Vowel("o",  505,  961, 2608 ));
+      vrefs.push(new Vowel("u",  320,  842, 2746 ));
     }
     
   } else if (selRef.value() == "English Aus") {
     if (selSpk.value() == "male") {
       // Cox et al. (2014)
-      // no F3, F4 data: Bladon & Fant (1978) cardinal values used
       vrefs = [];
-      vrefs.push(new Vowel("iː", 304, 2349, 3070, 3590));
-      vrefs.push(new Vowel("ɪ",  360, 2195, 2720, 3790));
-      vrefs.push(new Vowel("e",  560, 1956, 2580, 3940));
-      vrefs.push(new Vowel("æ",  776, 1633, 2460, 3710));
-      vrefs.push(new Vowel("ɐ",  711, 1252, 2770, 3650));
-      vrefs.push(new Vowel("ɐː", 728, 1204, 2770, 3650));
-      vrefs.push(new Vowel("ɔ",  592,  944, 2640, 3310));
-      vrefs.push(new Vowel("oː", 419,  704, 2670, 3240));
-      vrefs.push(new Vowel("ʊ",  383,  901, 2550, 3280));
-      vrefs.push(new Vowel("ʉː", 332, 1656, 2230, 3200));
-      vrefs.push(new Vowel("ɜː", 503, 1468, 2500, 3500));
+      vrefs.push(new Vowel("iː", 304, 2349 ));
+      vrefs.push(new Vowel("ɪ",  360, 2195 ));
+      vrefs.push(new Vowel("e",  560, 1956 ));
+      vrefs.push(new Vowel("æ",  776, 1633 ));
+      vrefs.push(new Vowel("ɐ",  711, 1252 ));
+      vrefs.push(new Vowel("ɐː", 728, 1204 ));
+      vrefs.push(new Vowel("ɔ",  592,  944 ));
+      vrefs.push(new Vowel("oː", 419,  704 ));
+      vrefs.push(new Vowel("ʊ",  383,  901 ));
+      vrefs.push(new Vowel("ʉː", 332, 1656 ));
+      vrefs.push(new Vowel("ɜː", 503, 1468 ));
     } else {
       // Cox et al. (2014)
-      // no F3, F4 data: Bladon & Fant (1978) cardinal values used
       vrefs = [];
-      vrefs.push(new Vowel("iː", 367, 2900, 3070, 3590));
-      vrefs.push(new Vowel("ɪ",  421, 2675, 2720, 3790));
-      vrefs.push(new Vowel("e",  657, 2274, 2580, 3940));
-      vrefs.push(new Vowel("æ", 1005, 1811, 2460, 3710));
-      vrefs.push(new Vowel("ɐ",  924, 1476, 2770, 3650));
-      vrefs.push(new Vowel("ɐː", 937, 1353, 2770, 3650));
-      vrefs.push(new Vowel("ɔ",  724, 1122, 2640, 3310));
-      vrefs.push(new Vowel("oː", 462,  837, 2670, 3240));
-      vrefs.push(new Vowel("ʊ",  441, 1012, 2550, 3280));
-      vrefs.push(new Vowel("ʉː", 402, 2011, 2230, 3200));
-      vrefs.push(new Vowel("ɜː", 620, 1785, 2500, 3500));
+      vrefs.push(new Vowel("iː", 367, 2900 ));
+      vrefs.push(new Vowel("ɪ",  421, 2675 ));
+      vrefs.push(new Vowel("e",  657, 2274 ));
+      vrefs.push(new Vowel("æ", 1005, 1811 ));
+      vrefs.push(new Vowel("ɐ",  924, 1476 ));
+      vrefs.push(new Vowel("ɐː", 937, 1353 ));
+      vrefs.push(new Vowel("ɔ",  724, 1122 ));
+      vrefs.push(new Vowel("oː", 462,  837 ));
+      vrefs.push(new Vowel("ʊ",  441, 1012 ));
+      vrefs.push(new Vowel("ʉː", 402, 2011 ));
+      vrefs.push(new Vowel("ɜː", 620, 1785 ));
     }
 
   } else if (selRef.value() == "English RP") {
     if (selSpk.value() == "male") {
       // Deterding (1997) Table 2
-      // no F4 data: Hillenbrand (1995) / Bladon & Fant (1978) values used
       vrefs = [];
-      vrefs.push(new Vowel("iː", 280, 2249, 2765, 3657));
-      vrefs.push(new Vowel("ɪ",  367, 1757, 2556, 3618));
-      vrefs.push(new Vowel("e",  494, 1650, 2547, 3649));
-      vrefs.push(new Vowel("æ",  690, 1550, 2463, 3624));
-      vrefs.push(new Vowel("ʌ",  644, 1259, 2551, 3557));
-      vrefs.push(new Vowel("ɑː", 646, 1155, 2490, 3687));
-      vrefs.push(new Vowel("ɒ",  558, 1047, 2481, 3650));
-      vrefs.push(new Vowel("ɔː", 415,  828, 2619, 3310));
-      vrefs.push(new Vowel("ʊ",  379, 1173, 2445, 3280));
-      vrefs.push(new Vowel("uː", 316, 1191, 2408, 3357));
-      vrefs.push(new Vowel("ɜː", 478, 1436, 2488, 3500));
+      vrefs.push(new Vowel("iː", 280, 2249, 2765 ));
+      vrefs.push(new Vowel("ɪ",  367, 1757, 2556 ));
+      vrefs.push(new Vowel("e",  494, 1650, 2547 ));
+      vrefs.push(new Vowel("æ",  690, 1550, 2463 ));
+      vrefs.push(new Vowel("ʌ",  644, 1259, 2551 ));
+      vrefs.push(new Vowel("ɑː", 646, 1155, 2490 ));
+      vrefs.push(new Vowel("ɒ",  558, 1047, 2481 ));
+      vrefs.push(new Vowel("ɔː", 415,  828, 2619 ));
+      vrefs.push(new Vowel("ʊ",  379, 1173, 2445 ));
+      vrefs.push(new Vowel("uː", 316, 1191, 2408 ));
+      vrefs.push(new Vowel("ɜː", 478, 1436, 2488 ));
     } else {
       // Deterding (1997) Table 2
       vrefs = [];
-      vrefs.push(new Vowel("iː", 303, 2654, 3203, 4352));
-      vrefs.push(new Vowel("ɪ",  384, 2174, 2962, 4334));
-      vrefs.push(new Vowel("e",  719, 2063, 2997, 4319));
-      vrefs.push(new Vowel("æ", 1018, 1799, 2869, 4290));
-      vrefs.push(new Vowel("ʌ",  914, 1459, 2831, 4092));
-      vrefs.push(new Vowel("ɑː", 910, 1316, 2841, 4299));
-      vrefs.push(new Vowel("ɒ",  751, 1215, 2790, 4299));
-      vrefs.push(new Vowel("ɔː", 389,  888, 2796, 3923));
-      vrefs.push(new Vowel("ʊ",  410, 1340, 2697, 4052));
-      vrefs.push(new Vowel("uː", 328, 1437, 2674, 4115));
-      vrefs.push(new Vowel("ɜː", 606, 1695, 2839, 3914));
+      vrefs.push(new Vowel("iː", 303, 2654, 3203 ));
+      vrefs.push(new Vowel("ɪ",  384, 2174, 2962 ));
+      vrefs.push(new Vowel("e",  719, 2063, 2997 ));
+      vrefs.push(new Vowel("æ", 1018, 1799, 2869 ));
+      vrefs.push(new Vowel("ʌ",  914, 1459, 2831 ));
+      vrefs.push(new Vowel("ɑː", 910, 1316, 2841 ));
+      vrefs.push(new Vowel("ɒ",  751, 1215, 2790 ));
+      vrefs.push(new Vowel("ɔː", 389,  888, 2796 ));
+      vrefs.push(new Vowel("ʊ",  410, 1340, 2697 ));
+      vrefs.push(new Vowel("uː", 328, 1437, 2674 ));
+      vrefs.push(new Vowel("ɜː", 606, 1695, 2839 ));
     }
     
   } else if (selRef.value() == "English USA") {
@@ -611,6 +737,49 @@ function refreshOverlay() {
       vrefs.push(new Vowel("ɝ", 523, 1558, 1929, 3914));
     }
     
+  } else if (selRef.value() == "Japanese") {
+    if (selSpk.value() == "male") {
+      // Kasuya et al. (1968)
+      vrefs = [];
+      vrefs.push(new Vowel("i", 263, 2263, 3000       ));
+      vrefs.push(new Vowel("e", 475, 1738, 2400       ));
+      vrefs.push(new Vowel("ɑ", 775, 1163, 2713, 3400 ));
+      vrefs.push(new Vowel("o", 550,  838, 2625       ));
+      vrefs.push(new Vowel("u", 363, 1300, 2350       ));
+    } else {
+      // Kasuya et al. (1968)
+      vrefs = [];
+      vrefs.push(new Vowel("i", 325, 2725, 3475 ));
+      vrefs.push(new Vowel("e", 483, 2317, 2983 ));
+      vrefs.push(new Vowel("ɑ", 888, 1363, 3050 ));
+      vrefs.push(new Vowel("o", 483,  925, 3000 ));
+      vrefs.push(new Vowel("u", 375, 1675, 2688 ));
+    }
+    
+  } else if (selRef.value() == "Kamu") {
+      // Harvey et al. (2024)
+      selSpk.value("female");
+      refreshSpk();
+      vrefs = [];
+      vrefs.push(new Vowel("i", 486, 2225, 3026 ));
+      vrefs.push(new Vowel("e", 653, 2017, 2802 ));
+      vrefs.push(new Vowel("a", 761, 1448, 2913 ));
+      vrefs.push(new Vowel("o", 641, 1160, 2970 ));
+      vrefs.push(new Vowel("u", 547, 1105, 2837 ));
+      vrefs.push(new Vowel("ɨ", 481, 1545, 3006 ));
+
+  } else if (selRef.value() == "Larrakia") {
+      // Harvey et al. (2024)
+      selSpk.value("female");
+      refreshSpk();
+      vrefs = [];
+      vrefs.push(new Vowel("i", 413, 1766, 2615 ));
+      vrefs.push(new Vowel("e", 549, 1682, 2630 ));
+      vrefs.push(new Vowel("a", 601, 1467, 2596 ));
+      vrefs.push(new Vowel("o", 555, 1279, 2674 ));
+      vrefs.push(new Vowel("u", 440, 1206, 2543 ));
+      vrefs.push(new Vowel("ɨ", 425, 1527, 2601 ));
+    
   } else if (selRef.value() == "Russian") {
     if (selSpk.value() == "male") {
       // Fant (1971) Table 2.31-1
@@ -625,35 +794,23 @@ function refreshOverlay() {
       // Jones (1953); Holden & Nearey (1986)
       // no ɨ data: Bladon & Fant (1978) cardinal values used
       vrefs = [];
-      vrefs.push(new Vowel("i", 350, 2850, 3675, 4625));
-      vrefs.push(new Vowel("ɨ", 400, 2200, 2900, 4313));
-      vrefs.push(new Vowel("e", 500, 2150, 2950, 4375));
-      vrefs.push(new Vowel("ɑ", 950, 1430, 2375, 4263));
-      vrefs.push(new Vowel("o", 600, 1050, 2500, 4025));
-      vrefs.push(new Vowel("u", 350,  700, 2850, 4150));
+      vrefs.push(new Vowel("i", 350, 2850, 3675 ));
+      vrefs.push(new Vowel("ɨ", 400, 2200, 2900 ));
+      vrefs.push(new Vowel("e", 500, 2150, 2950 ));
+      vrefs.push(new Vowel("ɑ", 950, 1430, 2375 ));
+      vrefs.push(new Vowel("o", 600, 1050, 2500 ));
+      vrefs.push(new Vowel("u", 350,  700, 2850 ));
     }
-    
-  } else if (selRef.value() == "Japanese") {
-    if (selSpk.value() == "male") {
-      // Yazawa & Kondo (2019) Table 3 long vowels
-      // no F3-F4 data: Fant (1971) values used
+      
+  } else if (selRef.value() == "Warlpiri") {
+      // Tabain et al. (2020)
+      selSpk.value("female");
+      refreshSpk();
       vrefs = [];
-      vrefs.push(new Vowel("ii", 306, 2293, 3200, 3570));
-      vrefs.push(new Vowel("ee", 460, 2043, 2550, 3410));
-      vrefs.push(new Vowel("ɑɑ", 744, 1237, 2600, 3550));
-      vrefs.push(new Vowel("oo", 455,  813, 2500, 3500));
-      vrefs.push(new Vowel("uu", 352, 1442, 2500, 3400));
-    } else {
-      // Yazawa & Kondo (2019) Table 3 long vowels
-      // no F3-F4 data: Fant (1971) values used
-      vrefs = [];
-      vrefs.push(new Vowel("ii", 355, 2794, 3675, 4625));
-      vrefs.push(new Vowel("ee", 555, 2378, 2950, 4375));
-      vrefs.push(new Vowel("ɑɑ", 889, 1474, 2375, 4263));
-      vrefs.push(new Vowel("oo", 535,  996, 2500, 4025));
-      vrefs.push(new Vowel("uu", 459, 1653, 2850, 4150));
-    }
-    
+      vrefs.push(new Vowel("i", 357, 2142, 2766, 3963 ));
+      vrefs.push(new Vowel("a", 579, 1457, 2800, 3838 ));
+      vrefs.push(new Vowel("u", 364, 1294, 2738, 3835 ));
+  
   } else {
       vrefs = [];
   }
@@ -687,7 +844,7 @@ class Vowel {
     this.F2 = F2;
     this.F3 = F3;
     this.F4 = F4;
-    this.vx = map(this.F2, F2max, F2min, frontx1, backx);
+    this.vx = map(this.F2, F2max, F2min, frontx1, backx1);
     this.vy = map(this.F1, F1min, F1max, topy, boty);
   }
   plot() {
